@@ -43,7 +43,8 @@ namespace Tamabot{
         private static string[,] rarePets = {
             {"gwa gwa", "https://i.redd.it/mauk7le4i5j41.png"},
             {"ferret", "https://thumbs.gfycat.com/BreakableImperturbableAgama-max-1mb.gif"},
-            {"red panda", "https://cdn.discordapp.com/attachments/570811751826980868/713227350325723146/images.png"}
+            {"red panda", "https://cdn.discordapp.com/attachments/570811751826980868/713227350325723146/images.png"},
+            {"turtle duck", "https://cdn.discordapp.com/attachments/709449720375804105/715724158176198656/360.png"}
         };
         private static string[,] uncommonPets = {
             {"birb", "https://cultofthepartyparrot.com/parrots/hd/parrot.gif"},
@@ -245,7 +246,7 @@ namespace Tamabot{
         }
 
         public KeyValuePair<bool, int> Train(){
-            if(rng.Next(100) < 25){
+            if(rng.Next(100) < 33){
                 var expAmt = rng.Next(10, 25);
                 exp += expAmt;
                 return new KeyValuePair<bool, int>(true, expAmt);

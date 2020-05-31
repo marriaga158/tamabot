@@ -21,6 +21,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     //private static Dictionary<string, string> map = new Dictionary<string, string>();
     // THIS NEEDS TO BE STATIC OR IT WILL NOT HOLD VALUES ACROSS COMMANDS
     private static Dictionary<string, KeyValuePair<int, DateTimeOffset>> money = new Dictionary<string, KeyValuePair<int, DateTimeOffset>>();
+    private static Dictionary<string, KeyValuePair<DateTimeOffset, bool>> cooldown = new Dictionary<string, KeyValuePair<DateTimeOffset, bool>>();
 
     private static readonly string abandonMsg = "You didn't care for your Tama, so it ran away.";
     private static readonly string dontHaveMsg = "You don't have a Tama! Buy one using !store";
@@ -42,6 +43,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     int uncommonCost = 450;
     int rareCost = 1300;
     int veryRareCost = 4000;
+    private static readonly int COOLDOWN_SECS = 5;
 
     // on help
     [Command("tama")]
@@ -85,9 +87,9 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     }
 
     // on help
-    [Command("buy", RunMode = RunMode.Async)]
+    [Command("gatcha", RunMode = RunMode.Async)]
     [Summary("Purchases a tama for the user")]
-    [Alias("gatcha", "gatchapon", "random")]
+    [Alias("gatchapon", "random")]
     public async Task buy(){
         // idk why this doesn't work sometimes ugh
         SocketUser user = Context.User;
@@ -333,7 +335,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                 var resultKey = result.Key;
                 //var resultValue = result.Value;
                 resultKey += 200;
-                money[id] = new KeyValuePair<int, DateTimeOffset>(resultKey, DateTimeOffset.UtcNow.AddHours(24));
+                money[id] = new KeyValuePair<int, DateTimeOffset>(resultKey, DateTimeOffset.UtcNow.AddHours(23));
                 await ReplyAsync(dailyMsg);
                 writeToFile();
             } else {
@@ -380,6 +382,19 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         var trainPair = gotchiiList[id].Train();
 
         Random rng = new Random();
+
+        KeyValuePair<bool, bool> cooldownResult = checkCooldown(id);
+        if(!cooldownResult.Key){
+            if(!cooldownResult.Value){
+                // send the warning message
+                await ReplyAndDeleteAsync("**" + Context.Guild.GetUser(Convert.ToUInt64(id)).ToString() + "**, please wait "+COOLDOWN_SECS+" seconds between attempts!");
+                return;
+            } else {
+                Console.WriteLine("train command on cooldown, message already sent");
+                return;
+                // break out of the method
+            }
+        }
 
         if(trainPair.Key){
             EmbedBuilder eb = new EmbedBuilder{
@@ -490,7 +505,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     // on help
     [Command("store", RunMode = RunMode.Async)]
     [Summary("buys a tama but better")]
-    [Alias("shop")]
+    [Alias("shop", "buy")]
     public async Task store(){
         SocketUser user = Context.User;
         string id = user.Id.ToString();
@@ -834,6 +849,19 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
 
         int odds;
 
+        KeyValuePair<bool, bool> cooldownResult = checkCooldown(id);
+        if(!cooldownResult.Key){
+            if(!cooldownResult.Value){
+                // send the warning message
+                await ReplyAndDeleteAsync("**" + Context.Guild.GetUser(Convert.ToUInt64(id)).ToString() + "**, please wait "+ COOLDOWN_SECS+ " seconds between attempts!");
+                return;
+            } else {
+                Console.WriteLine("roulette command on cooldown, message already sent");
+                return;
+                // break out of the method
+            }
+        }
+
         //Console.WriteLine("betType: " + betType + " bet: " + bet + " betAmount: " + betAmount + " pulledNumber: " + pulledNumber);
         if(betType == "help"){
             // send a help message to their pm
@@ -1157,6 +1185,36 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         }
 
         writeToFile();
+    }
+
+    /// the first bool is if the cooldown has expired, the second is if a warning has been sent
+    public static KeyValuePair<bool, bool> checkCooldown(string id){
+        
+
+        KeyValuePair<DateTimeOffset, bool> result;
+        if(cooldown.TryGetValue(id, out result)){
+            long timeDiff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - result.Key.ToUnixTimeSeconds();
+            if(timeDiff < COOLDOWN_SECS){
+                // cooldown hasn't ended
+                if(!result.Value){
+                    // if a warning message hasn't been sent, send one and set list value to true;
+                    cooldown[id] = new KeyValuePair<DateTimeOffset, bool>(result.Key, true);
+                    return new KeyValuePair<bool, bool>(false, false);
+                } else {
+                    // don't send another warning message, don't need to update the dictionary
+                    return new KeyValuePair<bool, bool>(false, true);
+                }
+            } else {
+                // cooldown has ended
+                // update the key in the list with the new current time
+                cooldown[id] = new KeyValuePair<DateTimeOffset, bool>(DateTimeOffset.UtcNow, false);
+                return new KeyValuePair<bool, bool>(true, false);
+            }
+        } else {
+            // they haven't sent a message yet so no cooldown
+            cooldown.Add(id, new KeyValuePair<DateTimeOffset, bool>(DateTimeOffset.UtcNow, false));
+            return new KeyValuePair<bool, bool>(true, false);
+        }
     }
 
     // private Gotchii getFromMasterList(SocketUser user){
