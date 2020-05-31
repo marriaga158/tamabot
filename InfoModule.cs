@@ -458,9 +458,30 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     // on help
     [Command("sitter", RunMode = RunMode.Async)]
     [Summary("buys a sitter")]
-    public async Task sitterGet(){
+    public async Task sitterGet(int input = -1){
         SocketUser user = Context.User;
         string id = user.Id.ToString();
+
+        // argument
+        if(input != 0){
+            if(input > 0){
+                // input screening
+                if(subtractMoney(id, 20 * input)){
+                    gotchiiList[id].SitterForDays(input);
+                    EmbedBuilder eb = new EmbedBuilder();
+                    eb.Title = "Success!";
+                    eb.Color = Color.Green;
+                    eb.Description = "You have hired a sitter for " + input + " days.";
+                    await Context.Channel.SendMessageAsync("", false, eb.Build());
+                } else {
+                    await Context.Channel.SendMessageAsync("", false, NOT_ENOUGH_MONEY.Build());
+                }
+            } else {
+                await ReplyAsync("Please enter an integer > 0.");
+            }
+
+            return;
+        }
 
         // check if they have a tama
         Gotchii Gotchresult;
@@ -484,6 +505,8 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                             eb.Color = Color.Green;
                             eb.Description = "You have hired a sitter for " + i + " days.";
                             await Context.Channel.SendMessageAsync("", false, eb.Build());
+                        } else {
+                            await Context.Channel.SendMessageAsync("", false, NOT_ENOUGH_MONEY.Build());
                         }
                     } else {
                         await ReplyAsync("Please respond with an integer number > 0.");
