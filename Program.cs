@@ -15,7 +15,7 @@ namespace Tamabot
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
         
-        private DiscordSocketClient _client;
+        private static DiscordSocketClient _client;
         private CommandHandler commandHandler;
         private CommandService _commands;
         private InteractiveService _interactive;
@@ -50,7 +50,7 @@ namespace Tamabot
             InfoModule.constructEmbed(); // Initializes the common embeds
 
             // sets the custom status 
-            await _client.SetGameAsync("!help");
+            await _client.SetGameAsync("!help | Keep giving suggestions!");
 
             _commands = new CommandService();
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
@@ -84,6 +84,10 @@ namespace Tamabot
 
         public CommandService GetCommandService(){
             return _commands;
+        }
+
+        public async static Task updateStatus(string status){
+            await _client.SetGameAsync("!help | " + status);
         }
         
     }

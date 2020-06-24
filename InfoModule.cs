@@ -303,6 +303,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         SocketUser user = Context.User;
 
         await Discord.UserExtensions.SendMessageAsync(user, "```Tamabot Command List: \n \n" +
+        "!boosts - Allows you to buy training boosts.\n" +
         "!clean - Cleans your Tama's room. Costs $10 for cleaning supplies.\n" +
         "!daily - Gives you your daily credits. Can be used once every 24 hours.\n" +
         "!gatcha - Gives you a random Tama of random rarity. Overrides your existing Tama if you have one. Costs $100.\n" +
@@ -379,6 +380,20 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         SocketUser user = Context.User;
         string id = user.Id.ToString();
 
+        Gotchii result;
+        if(gotchiiList.TryGetValue(id, out result)){
+            if(!result.update()){
+                // ran away
+                await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                gotchiiList.Remove(id);
+                return;
+            }
+        } else {
+            // no gotchii
+            await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
+            return;
+        }
+
         var trainPair = gotchiiList[id].Train();
 
         Random rng = new Random();
@@ -396,21 +411,26 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
             }
         }
 
+        EmbedBuilder eb;
         if(trainPair.Key){
-            EmbedBuilder eb = new EmbedBuilder{
+            eb = new EmbedBuilder{
                 Title = "Success!",
                 Description = "Your Tama paid attention!\n" + "**+" + trainPair.Value + " exp**",
                 Color = Color.Green
             };
-            await Context.Channel.SendMessageAsync("", false, eb.Build());
         } else {
-            EmbedBuilder eb = new EmbedBuilder{
+            eb = new EmbedBuilder{
                 Title = "Try again!",
                 Description = trainFailMsgs[rng.Next(trainFailMsgs.Length)], // chooses a random fail msg from the array
                 Color = Color.Red
             };
-            await Context.Channel.SendMessageAsync("", false, eb.Build());
         }
+
+        if(result.GetBoosts() > 0){
+            eb.Description = eb.Description + "\nBoosts remaining: " + result.GetBoosts();
+        }
+
+        await Context.Channel.SendMessageAsync("", false, eb.Build());
 
         writeToFile();
     }
@@ -458,12 +478,12 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     // on help
     [Command("sitter", RunMode = RunMode.Async)]
     [Summary("buys a sitter")]
-    public async Task sitterGet(int input = -1){
+    public async Task sitterGet(int input = -999999){
         SocketUser user = Context.User;
         string id = user.Id.ToString();
 
         // argument
-        if(input != 0){
+        if(input != -999999){
             if(input > 0){
                 // input screening
                 if(subtractMoney(id, 20 * input)){
@@ -473,6 +493,8 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                     eb.Color = Color.Green;
                     eb.Description = "You have hired a sitter for " + input + " days.";
                     await Context.Channel.SendMessageAsync("", false, eb.Build());
+
+                    writeToFile();
                 } else {
                     await Context.Channel.SendMessageAsync("", false, NOT_ENOUGH_MONEY.Build());
                 }
@@ -517,6 +539,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
             } else {
                 // tama ran away
                 await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                gotchiiList.Remove(id);
             }
         } else {
             await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
@@ -1143,6 +1166,89 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         // this code is a crime against object oriented programming
     }
 
+    [Command("boosts", RunMode = RunMode.Async)]
+    [Summary("Buys training and other boosts when i do RPG stuff")]
+    [Alias("boost")]
+    public async Task boosts(){
+        SocketUser user = Context.User;
+        string id = user.Id.ToString();
+
+        string boosts = "```" +
+        "Choose the amount of training boosts you want to buy.\n\n" +
+        "[1] 10 boosts - $150\n" + 
+        "[2] 25 boosts - $300\n" +
+        "[3] 50 boosts - $550\n" +
+        "[4] 100 boosts - $1000\n" +
+        "```";
+        await ReplyAsync(boosts);
+        var response = await NextMessageAsync();
+        Gotchii result;
+        if(response.Content == "1"){
+            if(gotchiiList.TryGetValue(id, out result)){
+                if(result.update()){
+                    if(subtractMoney(id, 150)){
+                        result.AddBoost(10);
+                        await ReplyAndDeleteAsync("**You have purchased 10 boosts.**");
+                    }
+                } else {
+                    await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                    gotchiiList.Remove(id);
+                }
+            } else {
+                await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
+            }
+        } else if (response.Content == "2"){
+            if(gotchiiList.TryGetValue(id, out result)){
+                if(result.update()){
+                    if(subtractMoney(id, 300)){
+                        result.AddBoost(25);
+                        await ReplyAndDeleteAsync("**You have purchased 25 boosts.**");
+                    }
+                } else {
+                    await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                    gotchiiList.Remove(id);
+                }
+            } else {
+                await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
+            }
+            
+        } else if(response.Content == "3"){
+            if(gotchiiList.TryGetValue(id, out result)){
+                if(result.update()){
+                    if(subtractMoney(id, 550)){
+                        result.AddBoost(50);
+                        await ReplyAndDeleteAsync("**You have purchased 50 boosts.**");
+                    }
+                } else {
+                    await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                    gotchiiList.Remove(id);
+                }
+            } else {
+                await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
+            }
+
+        } else if (response.Content == "4"){
+            if(gotchiiList.TryGetValue(id, out result)){
+                if(result.update()){
+                    if(subtractMoney(id, 1000)){
+                        result.AddBoost(100);
+                        await ReplyAndDeleteAsync("**You have purchased 100 boosts.**");
+                    }
+                } else {
+                    await Context.Channel.SendMessageAsync("", false, ABANDON_EMBED.Build());
+                    gotchiiList.Remove(id);
+                }
+            } else {
+                await Context.Channel.SendMessageAsync("", false, DONTHAVE_EMBED.Build());
+            }
+
+        } else {
+
+        }
+    }
+
+    
+
     public static void gotchiiAssign(string id, Gotchii.Rarity rarity, int petID){
         Gotchii result;
         if(gotchiiList.TryGetValue(id, out result)){
@@ -1190,6 +1296,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
             if(result.Key - amount >= 0){ 
                 money[userId] = new KeyValuePair<int, DateTimeOffset>(money[userId].Key - amount, money[userId].Value);
                 money["bank"] = new KeyValuePair<int, DateTimeOffset>(money["bank"].Key + amount, money[userId].Value);
+                Program.updateStatus("$" + money["bank"].Key + " in the bank");
                 writeToFile();
                 return true;
             } else {

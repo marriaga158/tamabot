@@ -23,6 +23,7 @@ namespace Tamabot{
         public int exp;
         public Rarity rarity;
         public DateTimeOffset sitterEndTime;
+        public int boostsRemaining;
         [NonSerialized()] private static readonly int TWOPOINTFOUR_HOURS = 8640;
         [NonSerialized()] private static DateTimeOffset currentTime;
         // [NonSerialized()] private string[,] pets = {
@@ -38,7 +39,8 @@ namespace Tamabot{
             {"Ein", "https://cdn.discordapp.com/attachments/709449720375804105/709449791699943534/ein.png"},
             {"2004 Satin Silver Metallic Honda Civic Coupe", "https://cdn.discordapp.com/attachments/709449720375804105/713608089466830848/cnex7VQxdr4hwfWwRHE8PiKF96YgObDh44xYXaAeGwWeSSkSYc2WYInfszXKyWdKxfrYq2fLbtAWRdBeWYVzT3swl3kKaZO2.png"},
             {"strawberry", "https://lh3.googleusercontent.com/proxy/KXbqKTqb7S8MqD3VI-xBe8C4KXNgBzzBXOMmDK3R1QFW_TNhfJKiYGyyu5ykqoFD6gltqhvdk9FvCpGOTu0bFEiaoNor6OE7e_izYV_-LNdMrg"},
-            {"owlbear", "https://cdn.discordapp.com/attachments/709449720375804105/713227966112595978/636252772225295187.png"}
+            {"owlbear", "https://cdn.discordapp.com/attachments/709449720375804105/713227966112595978/636252772225295187.png"},
+            {"Ramiel", "https://vignette.wikia.nocookie.net/evangelion/images/0/08/Ramieldesign.png/revision/latest?cb=20130116210135"}
         };
         private static string[,] rarePets = {
             {"gwa gwa", "https://i.redd.it/mauk7le4i5j41.png"},
@@ -112,6 +114,7 @@ namespace Tamabot{
             Console.WriteLine("DebugRarity = " + rarity);
 
             sitterEndTime=DateTimeOffset.UtcNow.AddHours(-1000); 
+            boostsRemaining = 0;
         }
 
         public Gotchii(Rarity rarity, int petID){
@@ -127,6 +130,8 @@ namespace Tamabot{
             this.petID = petID;
             name = pets[rarity][petID,0];
             sitterEndTime=DateTimeOffset.UtcNow.AddHours(-1000); 
+
+            boostsRemaining = 0;
         }
 
         // don't really do these
@@ -196,7 +201,7 @@ namespace Tamabot{
             "Hunger: " + getHunger() + "\n" + 
             "Cleanliness: " + getClean() + "\n" 
             + "Happiness: " + getPlay()  + "\n" 
-            + "Level: " + (int)Math.Pow(exp, (1.0/3.0)) + "\n" 
+            + "Level: " + (int)Math.Pow(exp, (1.0/2.0)) + "\n" 
             + "Rarity: " + rarity + "\n"
             + "Sitter time left: " + sitterString();
         }
@@ -246,11 +251,21 @@ namespace Tamabot{
         }
 
         public KeyValuePair<bool, int> Train(){
-            if(rng.Next(100) < 33){
-                var expAmt = rng.Next(10, 25);
-                exp += expAmt;
-                return new KeyValuePair<bool, int>(true, expAmt);
+            if(boostsRemaining>0){
+                boostsRemaining--;
+                if(rng.Next(100) < 50){ // boosted to 50%
+                    var expAmt = rng.Next(10, 25);
+                    exp += expAmt;
+                    return new KeyValuePair<bool, int>(true, expAmt);
+                }
+            } else {
+                if(rng.Next(100) < 33){
+                    var expAmt = rng.Next(10, 25);
+                    exp += expAmt;
+                    return new KeyValuePair<bool, int>(true, expAmt);
+                }
             }
+
             return new KeyValuePair<bool, int>(false, 0);
         }
 
@@ -269,12 +284,16 @@ namespace Tamabot{
         }
 
         public void SitterForDays(int days){
-            Console.WriteLine("sitterfordays input: " + days);
-            sitterEndTime = DateTimeOffset.UtcNow.AddDays(days);
+            //Console.WriteLine("sitterfordays input: " + days);
+            if(sitterEndTime.CompareTo(DateTimeOffset.UtcNow) < 0){
+                sitterEndTime = DateTimeOffset.UtcNow.AddDays(days);
+            } else {
+                sitterEndTime = sitterEndTime.AddDays(days);
+            }
         }
         
         public KeyValuePair<int, int> GetExpLevel(){
-            return new KeyValuePair<int, int>(exp, (int)Math.Pow(exp, (1.0/3.0)));
+            return new KeyValuePair<int, int>(exp, (int)Math.Pow(exp, (1.0/2.0)));
         }
 
         public static string GetFormattedCommonPets(){
@@ -333,6 +352,14 @@ namespace Tamabot{
 
         public string GetDefaultName(){
             return pets[this.rarity][this.petID,0];
+        }
+
+        public void AddBoost(int boostAmt){
+            boostsRemaining += boostAmt;
+        }
+
+        public int GetBoosts(){
+            return this.boostsRemaining;
         }
     }
 }
