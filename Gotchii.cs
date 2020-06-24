@@ -40,19 +40,27 @@ namespace Tamabot{
             {"2004 Satin Silver Metallic Honda Civic Coupe", "https://cdn.discordapp.com/attachments/709449720375804105/713608089466830848/cnex7VQxdr4hwfWwRHE8PiKF96YgObDh44xYXaAeGwWeSSkSYc2WYInfszXKyWdKxfrYq2fLbtAWRdBeWYVzT3swl3kKaZO2.png"},
             {"strawberry", "https://lh3.googleusercontent.com/proxy/KXbqKTqb7S8MqD3VI-xBe8C4KXNgBzzBXOMmDK3R1QFW_TNhfJKiYGyyu5ykqoFD6gltqhvdk9FvCpGOTu0bFEiaoNor6OE7e_izYV_-LNdMrg"},
             {"owlbear", "https://cdn.discordapp.com/attachments/709449720375804105/713227966112595978/636252772225295187.png"},
-            {"Ramiel", "https://vignette.wikia.nocookie.net/evangelion/images/0/08/Ramieldesign.png/revision/latest?cb=20130116210135"}
+            {"Ramiel", "https://vignette.wikia.nocookie.net/evangelion/images/0/08/Ramieldesign.png/revision/latest?cb=20130116210135"},
+            {"furret but default dancing", "https://media1.tenor.com/images/b57ed8eda56b80d27c1ab2e64666c7c6/tenor.gif?itemid=14704368"},
+            {"2002 Gold Dust Metallic Toyota Camry", "https://media.ed.edmunds-media.com/toyota/camry/2002/oem/2002_toyota_camry_sedan_le_fq_oem_1_500.jpg"}
         };
         private static string[,] rarePets = {
             {"gwa gwa", "https://i.redd.it/mauk7le4i5j41.png"},
             {"ferret", "https://thumbs.gfycat.com/BreakableImperturbableAgama-max-1mb.gif"},
             {"red panda", "https://cdn.discordapp.com/attachments/570811751826980868/713227350325723146/images.png"},
-            {"turtle duck", "https://cdn.discordapp.com/attachments/709449720375804105/715724158176198656/360.png"}
+            {"turtle duck", "https://cdn.discordapp.com/attachments/709449720375804105/715724158176198656/360.png"},
+            {"metroid", "https://cdn.discordapp.com/attachments/709449720375804105/725215568009101341/latest.png"},
+            {"gnome", "https://cdn11.bigcommerce.com/s-59t8stv95a/images/stencil/1280x1280/products/1424/1392/agent-double-gnome-7-you-don-t-gno-me-3__63103.1527617597.jpg?c=2&imbypass=on"}
         };
+        // ok so like not actual animals are going to be rare and very rare, that's the threshold
         private static string[,] uncommonPets = {
             {"birb", "https://cultofthepartyparrot.com/parrots/hd/parrot.gif"},
             {"fox", "https://cdn.discordapp.com/attachments/709449720375804105/712897628790325308/Vulpes_vulpes_ssp_fulvus_6568085.png"},
             {"tarantula", "https://cdn.discordapp.com/attachments/709449720375804105/712897969489444914/TARANTULAC-e1562523058923.png"},
-            {"koala", "https://cdn.discordapp.com/attachments/709449720375804105/713227824755900516/Koala_climbing_tree.png"}
+            {"koala", "https://cdn.discordapp.com/attachments/709449720375804105/713227824755900516/Koala_climbing_tree.png"}, 
+            {"fox", "https://cdn.discordapp.com/attachments/709449720375804105/725213483616174120/Vulpes_vulpes_ssp_fulvus_6568085.png"},
+            {"bear", "https://cdn.discordapp.com/attachments/709449720375804105/725213959111573514/Image-w-cred-cap_-1200w-_-Brown-Bear-page_-brown-bear-in-fog_2_1.png"},
+            {"elephant", "https://cdn.discordapp.com/attachments/709449720375804105/725216039146881024/94351084_2570825139826450_7563146999747313664_n.png"}
         };
         private static string[,] commonPets = {
             {"cat (@cokezerocat)", "https://cdn.discordapp.com/attachments/709449720375804105/709463989582692502/EXb2gILUwAAhfcP.png"}, // conk zero
