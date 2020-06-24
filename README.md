@@ -4,3 +4,5 @@ This is the source code for the Tamagotchii-like bot I wrote over quarantine sum
 Some of the C# code may not be formatted in a "best practice" because I entered the language mostly blind, with only Java experience.
 
 This bot is heavily inspired by the Tatsugotchii function in the Tatsumaki bot found at https://tatsu.gg. If you are from the Tatsumaki dev team and want me to take this bot offline or remove this repo, just let me know.
+
+The bot is still in development and may get a full cloud deployment at some point, so if you want to give the bot a try and break things join the development server here https://discord.gg/TwKehqu
