@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Linq;
+using System.Diagnostics;
 
 // Keep in mind your module **must** be public and inherit ModuleBase.
 // If it isn't, it will not be discovered by AddModulesAsync!
@@ -306,9 +307,11 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         "!boosts - Allows you to buy training boosts.\n" +
         "!clean - Cleans your Tama's room. Costs $10 for cleaning supplies.\n" +
         "!daily - Gives you your daily credits. Can be used once every 24 hours.\n" +
+        "!discord - Sends you an invite to the Tamabot development server, where you can report bugs and give suggestions.\n" +
         "!gatcha - Gives you a random Tama of random rarity. Overrides your existing Tama if you have one. Costs $100.\n" +
         "!heist - Take part in a daring bank heist. Big risk = big reward\n" +
         "!feed - Feeds your Tama. Costs $25 for food.\n" +
+        "!fish - Go fishing. Costs $10 for bait.\n" +
         "!leaderboard - Returns a leaderboard of the highest level Tamas.\n" +
         "!money - Shows your current balance.\n" +
         "!play - Plays with your Tama.\n" +
@@ -332,6 +335,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
 
         KeyValuePair<int, DateTimeOffset> result;
         if(money.TryGetValue(id, out result)){
+            Debug.WriteLine("here 1");
             if(result.Value.ToUnixTimeSeconds() - DateTimeOffset.UtcNow.ToUnixTimeSeconds() < 0){
                 var resultKey = result.Key;
                 //var resultValue = result.Value;
@@ -347,6 +351,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
             // resultKey += 200;
             // money[id] = new KeyValuePair<int, long>(resultKey, resultValue);
         } else {
+            Debug.WriteLine("here 2");
             money.Add(id, new KeyValuePair<int, DateTimeOffset>(200, DateTimeOffset.UtcNow.AddHours(24))); // second value is going to be the time eventually
             await ReplyAsync(dailyMsg);
             writeToFile();
@@ -356,9 +361,10 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     // on help
     [Command("money")]
     [Summary("Shows the amount of money you have")]
-    [Alias("balance")]
+    [Alias("balance", "bal")]
     public async Task moneyGet(){
         SocketUser user = Context.User;
+        Console.WriteLine("user: " + user.ToString());
         string id = user.Id.ToString();
         EmbedBuilder eb = new EmbedBuilder();
         eb.Title = "Current Balance";
@@ -463,13 +469,24 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         //Console.WriteLine("ayo the sorting worked");
 
         StringBuilder sb = new StringBuilder();
+        int count = 1;
         for(int i=1; i<=sortedList.Count; i++){
-            sb.Append(i + ". " + Context.Guild.GetUser(Convert.ToUInt64(sortedList[i-1].Key)) + ", Level: " + sortedList[i-1].Value.GetExpLevel().Value);
-            sb.Append("\n");
+            // Console.WriteLine("got here");
+            // DiscordSocketClient thisIsForGettingUsers = new DiscordSocketClient();
+            // Console.WriteLine(thisIsForGettingUsers.GetUser(Convert.ToUInt64(sortedList[0].Key)));
+            // sb.Append(i + ". " + thisIsForGettingUsers.GetUser(Convert.ToUInt64(sortedList[i-1].Key)) + ", Level: " + sortedList[i-1].Value.GetExpLevel().Value);
+            SocketUser current = Context.Guild.GetUser(Convert.ToUInt64(sortedList[i-1].Key));
+            // string printout = "";
+            if(current != null){
+                sb.Append(count + ". " + current.ToString() + ", Level: " + sortedList[i-1].Value.GetExpLevel().Value);
+                count++;
+                sb.Append("\n");
+            }
+            //sb.Append(i + ". " + printout + ", Level: " + sortedList[i-1].Value.GetExpLevel().Value);
         }
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.Title = "Gotchii Leaderboard";
+        eb.Title = "Gotchii Server Leaderboard";
         eb.Description = sb.ToString();
         eb.Color = Color.Gold;
         await Context.Channel.SendMessageAsync("", false, eb.Build());
@@ -563,6 +580,14 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         await Context.Channel.SendMessageAsync("", false, eb.Build());
         var response = await NextMessageAsync();
         if(response.Content.ToLower() == "y"){
+
+            // this block exists in order to fix the problem where people try to !store without
+            KeyValuePair<int, DateTimeOffset> bankKey;
+            if(!money.TryGetValue(id, out bankKey)){ // if the bank value doesn't exist at all
+                await ReplyAndDeleteAsync("You don't have any money! Get some using !daily.");
+                return; // break
+            }
+
             await ReplyAsync("**Choose from: [C]ommon ($" + commonCost + "), [U]ncommon ($"+ uncommonCost + "), [R]are ($"+ rareCost+"), [V]eryRare ($"+ veryRareCost+")**" + "\nCurrent money: " + money[id].Key);
             response = await NextMessageAsync();
             var responseStr = response.Content.ToUpper();
@@ -697,9 +722,9 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
     public async Task sell(){
         int moneyPerLevelBase = 10;
         int commonMod = 1;
-        double uncommonMod = 1.5;
-        int rareMod = 2;
-        double veryRareMod = 2.5;
+        double uncommonMod = 2;
+        int rareMod = 4;
+        double veryRareMod = 10;
 
         SocketUser user = Context.User;
         string id = user.Id.ToString();
@@ -721,7 +746,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                 } else if (gotchiiList[id].rarity == Gotchii.Rarity.Rare){
                     sellAmount = moneyPerLevelBase * rareMod * gotchiiList[id].GetExpLevel().Value;
                     sellAmount += (int)(rareCost * 0.5);
-                } else if (gotchiiList[id].rarity == Gotchii.Rarity.Rare){
+                } else if (gotchiiList[id].rarity == Gotchii.Rarity.VeryRare){
                     sellAmount = (int)(moneyPerLevelBase * veryRareMod * gotchiiList[id].GetExpLevel().Value);
                     sellAmount += (int)(veryRareCost * 0.5);
                 }
@@ -785,6 +810,12 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         // addMoney already writes to file, redundant
     }
 
+    [Command("discord", RunMode = RunMode.Async)]
+    [Summary("sends an invite to the discord server")]
+    public async Task joinDiscord(){
+        await Discord.UserExtensions.SendMessageAsync(Context.User, "https://discord.gg/gw8TD5s2");
+    }
+
     // on help
     [Command("heist", RunMode = RunMode.Async)]
     [Summary("bank heist")]
@@ -824,8 +855,9 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                             await Context.Channel.SendMessageAsync("", false, eb.Build());
                             // subtractMoney("bank", money["bank"].Key);
                             // addMoney("bank", 1000);
-                            money["bank"] = new KeyValuePair<int, DateTimeOffset>(1000, money["bank"].Value);
+                            money["bank"] = new KeyValuePair<int, DateTimeOffset>(0, money["bank"].Value);
                             // necessary so that it doesn't add the money immediately back
+                            Program.updateStatus("$" + money["bank"].Key + " in the bank");
                         } else {
                             // heist failed
                             eb.Title = "Arrested!";
@@ -833,7 +865,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                             eb.Description = "You were caught by the police on your way out of the bank.\n" +
                             "-$" + money[id].Key;
                             await Context.Channel.SendMessageAsync("", false, eb.Build());
-                            subtractMoney(id, money[id].Key); // subtract all of the money
+                            subtractMoney(id, money[id].Key); // // subtract all of the money
                             gotchiiList.Remove(id);
                             writeToFile();
                         }
@@ -929,7 +961,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                     if(betType == "r/b"){
                         // red/black
                         Console.WriteLine("r/b reached");
-                        odds = 1;
+                        odds = 1 + 1; // because it subtracts
                         if(bet == "red" || bet == "r"){
                             // they bet red
                             if(redNumbers.Contains(pulledNumber)){
@@ -939,7 +971,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                 await Context.Channel.SendMessageAsync("", false, payout.Build());
                             } else {
                                 loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                subtractMoney(id, betAmount);
+                                // subtractMoney(id, betAmount);
                                 await Context.Channel.SendMessageAsync("", false, loser.Build());
                             }
                         } else if(bet == "black" || bet == "b"){
@@ -952,7 +984,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                 await Context.Channel.SendMessageAsync("", false, payout.Build());
                             } else {
                                 loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                subtractMoney(id, betAmount);
+                                // subtractMoney(id, betAmount);
                                 await Context.Channel.SendMessageAsync("", false, loser.Build());
                             }
                         } else {
@@ -961,7 +993,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                     } else if(betType == "dozen"){
                         // dozen bet
                         Console.WriteLine("dozen reached");
-                        odds = 2;
+                        odds = 2 + 1;
                         if(Int32.TryParse(bet, out int betInt)){
                             // the betInt is correct
                             if(betInt == 1){
@@ -971,7 +1003,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 2){
@@ -981,7 +1013,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 3){
@@ -991,7 +1023,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else {
@@ -1003,7 +1035,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                     } else if(betType == "street"){
                         // street bet
                         Console.WriteLine("street reached");
-                        odds = 11;
+                        odds = 11 + 1;
                         if(Int32.TryParse(bet, out int betInt)){
                             if(betInt == 1){
                                 if(street1.Contains(pulledNumber)){
@@ -1012,7 +1044,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 2){
@@ -1022,7 +1054,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 3){
@@ -1032,7 +1064,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 4){
@@ -1042,7 +1074,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 5){
@@ -1052,7 +1084,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 6){
@@ -1062,7 +1094,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 7){
@@ -1072,7 +1104,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 8){
@@ -1082,7 +1114,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 9){
@@ -1092,7 +1124,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 10){
@@ -1102,7 +1134,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 11){
@@ -1112,7 +1144,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else if(betInt == 12){
@@ -1122,7 +1154,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                     await Context.Channel.SendMessageAsync("", false, payout.Build());
                                 } else {
                                     loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                    subtractMoney(id, betAmount);
+                                    // subtractMoney(id, betAmount);
                                     await Context.Channel.SendMessageAsync("", false, loser.Build());
                                 }
                             } else {
@@ -1134,7 +1166,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                     } else if(betType == "straight" || betType == "single"){
                         // single number bet
                         Console.WriteLine("straight reached");
-                        odds = 35;
+                        odds = 35 + 1;
                         if(Int32.TryParse(bet, out int betInt)){
                             if(betInt>36){
                                 await ReplyAsync(YOU_FUCKED_UP);
@@ -1144,7 +1176,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
                                 await Context.Channel.SendMessageAsync("", false, payout.Build());
                             } else {
                                 loser.Description = "The number pulled was " + pulledNumber +", try again!";
-                                subtractMoney(id, betAmount);
+                                // subtractMoney(id, betAmount);
                                 await Context.Channel.SendMessageAsync("", false, loser.Build());
                             }
                         } else {
@@ -1160,7 +1192,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
             } else if (betAmount == 0){
                 await ReplyAndDeleteAsync(YOU_FUCKED_UP);
             } else{
-                await ReplyAndDeleteAsync("You can't gamble negative money!");
+                await ReplyAndDeleteAsync("You can't gamble negative money!"); // thanks dan
             }
         } 
         // this code is a crime against object oriented programming
@@ -1247,7 +1279,86 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         }
     }
 
-    
+    [Command("fish", RunMode = RunMode.Async)]
+    [Summary("Fish for fish, self explanatory")]
+    [Alias("fishing", "fishy", "cast")]
+    public async Task fish(){
+        SocketUser user = Context.User;
+        string id = user.Id.ToString();
+        EmbedBuilder eb = new EmbedBuilder{
+            Title = "Fishing Result",
+        };
+
+        KeyValuePair<bool, bool> cooldownResult = checkCooldown(id);
+        if(!cooldownResult.Key){
+            if(!cooldownResult.Value){
+                // send the warning message
+                await ReplyAndDeleteAsync("**" + Context.Guild.GetUser(Convert.ToUInt64(id)).ToString() + "**, please wait "+COOLDOWN_SECS+" seconds between attempts!");
+                return;
+            } else {
+                Console.WriteLine("train command on cooldown, message already sent");
+                return;
+                // break out of the method
+            }
+        }
+
+        int trashAmt = 7; // -3
+        int commonAmt = 15; // +5
+        int rareAmt = 30; // +20
+        int ultRareAmt = 100; // + 90
+        int megaRareAmt = 500; // + 490
+        if(subtractMoney(id, 10)){
+            // have enough money, then fish
+            Random rng = new Random();
+            int pulledNum = rng.Next(100); // between 0 and 100 idk if it's actually accurate or off by a percent
+            // i got them yesjulz moaning like an actress
+            // i keep a ratchet
+            if(pulledNum <= 40){
+                // 40% chance to pull trash
+                if(pulledNum < 20){
+                    eb.Description = "👞 You fished up some trash. **+$" + trashAmt + "**";
+                }
+                if(pulledNum >= 20){
+                    eb.Description = "📎 You fished up some trash. **+$" + trashAmt + "**";
+                }
+                eb.Color = Color.Red;
+                addMoney(id, trashAmt);
+            }
+            else if(pulledNum <= 75 && pulledNum > 40){
+                // 35% chance to pull a common fish
+                eb.Description = "🐟 You reeled in a common fish. **+$" + commonAmt + "**";
+                eb.Color = Color.Green;
+                addMoney(id, commonAmt);
+            }
+            else if(pulledNum > 75 && pulledNum <= 95){
+                // 20% chance to pull a rare fish
+                eb.Description = "🐠 You reeled in a rare fish! **+$" + rareAmt + "**";
+                eb.Color = Color.Purple;
+                addMoney(id, rareAmt);
+            }
+            else if(pulledNum >= 95 && pulledNum != 99){
+                // 5% chance to pull ultrarare
+                eb.Description = "🐙 You reeled in an ultra rare fish! **+$" + ultRareAmt + "**";
+                eb.Color = Color.Orange;
+                addMoney(id, ultRareAmt);
+            }
+            else if(pulledNum == 99){
+                // 1% chance
+                eb.Description = "🦈 what the fuck my guy you caught a shark holy shit **+$" + megaRareAmt + "**";
+                eb.Color = Color.Gold;
+                addMoney(id, megaRareAmt);
+            }
+            eb.Description = eb.Description + "\nYou paid **$10** for casting.";
+            await Context.Channel.SendMessageAsync("", false, eb.Build());
+            writeToFile();
+        }
+        else {
+            // not enough money to fish you suck
+            await Context.Channel.SendMessageAsync("", false, NOT_ENOUGH_MONEY.Build());
+        }
+
+        
+    }
 
     public static void gotchiiAssign(string id, Gotchii.Rarity rarity, int petID){
         Gotchii result;
@@ -1295,7 +1406,7 @@ public class InfoModule : InteractiveBase<SocketCommandContext>
         if(money.TryGetValue(userId, out result)){
             if(result.Key - amount >= 0){ 
                 money[userId] = new KeyValuePair<int, DateTimeOffset>(money[userId].Key - amount, money[userId].Value);
-                money["bank"] = new KeyValuePair<int, DateTimeOffset>(money["bank"].Key + amount, money[userId].Value);
+                money["bank"] = new KeyValuePair<int, DateTimeOffset>(money["bank"].Key + amount/2, money[userId].Value); // add half the money to the bank
                 Program.updateStatus("$" + money["bank"].Key + " in the bank");
                 writeToFile();
                 return true;

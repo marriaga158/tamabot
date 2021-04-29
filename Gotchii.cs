@@ -42,7 +42,8 @@ namespace Tamabot{
             {"owlbear", "https://cdn.discordapp.com/attachments/709449720375804105/713227966112595978/636252772225295187.png"},
             {"Ramiel", "https://vignette.wikia.nocookie.net/evangelion/images/0/08/Ramieldesign.png/revision/latest?cb=20130116210135"},
             {"furret but default dancing", "https://media1.tenor.com/images/b57ed8eda56b80d27c1ab2e64666c7c6/tenor.gif?itemid=14704368"},
-            {"2002 Gold Dust Metallic Toyota Camry", "https://media.ed.edmunds-media.com/toyota/camry/2002/oem/2002_toyota_camry_sedan_le_fq_oem_1_500.jpg"}
+            {"2002 Gold Dust Metallic Toyota Camry", "https://media.ed.edmunds-media.com/toyota/camry/2002/oem/2002_toyota_camry_sedan_le_fq_oem_1_500.jpg"},
+            {"StatTrak:tm: AWP Dragon Lore (Factory New) [Cobblestone Collection 2014]", "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17P7NdTRH-t26q4SZlvD7PYTQgXtu5Mx2gv3--Y3nj1H6qBFvMWHyIo7Adw9raF6GrlK9lLi-jJO7tJ_JzyNh63F3sX_emUPkgQYMMLL2MDRAbQ/360fx360f"}
         };
         private static string[,] rarePets = {
             {"gwa gwa", "https://i.redd.it/mauk7le4i5j41.png"},
@@ -60,7 +61,7 @@ namespace Tamabot{
             {"koala", "https://cdn.discordapp.com/attachments/709449720375804105/713227824755900516/Koala_climbing_tree.png"}, 
             {"fox", "https://cdn.discordapp.com/attachments/709449720375804105/725213483616174120/Vulpes_vulpes_ssp_fulvus_6568085.png"},
             {"bear", "https://cdn.discordapp.com/attachments/709449720375804105/725213959111573514/Image-w-cred-cap_-1200w-_-Brown-Bear-page_-brown-bear-in-fog_2_1.png"},
-            {"elephant", "https://cdn.discordapp.com/attachments/709449720375804105/725216039146881024/94351084_2570825139826450_7563146999747313664_n.png"}
+            {"elephant", "https://cdn.discordapp.com/attachments/709449720375804105/725216039146881024/94351084_2570825139826450_7563146999747313664_n.png"},
         };
         private static string[,] commonPets = {
             {"cat (@cokezerocat)", "https://cdn.discordapp.com/attachments/709449720375804105/709463989582692502/EXb2gILUwAAhfcP.png"}, // conk zero
@@ -69,7 +70,7 @@ namespace Tamabot{
             {"frog", "https://cdn.discordapp.com/attachments/709449720375804105/712901994024534026/pet-frog-names.png"},
             {"raccoon", "https://cdn.discordapp.com/attachments/709449720375804105/713226973887070318/raccoon_thumb.png"},
             {"goldfish", "https://cdn.discordapp.com/attachments/709449720375804105/713227250668929105/imageService.png"},
-            {"rat", "https://cdn.discordapp.com/attachments/709449720375804105/713227390792237098/tenor.png"}
+            {"rat", "https://cdn.discordapp.com/attachments/709449720375804105/713227390792237098/tenor.png"},
         };
 
         private Dictionary<Rarity, string[,]> pets = new Dictionary<Rarity, string[,]>(){

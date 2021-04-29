@@ -5,7 +5,7 @@ using Discord;
 using Discord.WebSocket;
 using Discord.Commands;
 
-    namespace Tamabot{
+namespace Tamabot{
     public class CommandHandler
     {
         private readonly DiscordSocketClient _client;
